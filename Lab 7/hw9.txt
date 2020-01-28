@@ -1,0 +1,120 @@
+2.
+git clone ~eggert/src/gnu/diffutils d1
+// I cloned Diffutils into a new repo to make sure everything
+   is unmodified.
+cd d1
+// Change to the new directory.
+git checkout v3.0 -b quote
+// Checkout version 3.0 to a new branch called quote.
+
+3.
+patch -p1 < ../quote-3.0-patch.txt
+// Patch the current branch with my patch created previously.
+
+4.
+I read through the link provided in the spec.
+
+5.
+I check the files that have been modified using the output from
+question 3:
+patching file src/cmp.c
+patching file src/diff.c
+patching file src/diff3.c
+patching file src/dir.c
+patching file src/sdiff.c
+patching file src/util.c
+I open each of them and press C-x 4 a. Then I add "Change ` in
+string constants to '" after the file name.
+The entries I added look like this:
+2019-11-17  Jingnong Qu  <classjqu@lnxsrv09.seas.ucla.edu>
+
+        * src/util.c: Change ` in string constants to '.
+
+        * src/sdiff.c: Change ` in string constants to '.
+
+        * src/dir.c: Change ` in string constants to '.
+
+        * src/diff3.c: Change ` in string constants to '.
+
+        * src/diff.c: Change ` in string constants to '.
+
+        * src/cmp.c: Change ` in string constants to '.
+
+
+6.
+git add .
+// Add file contents to the index.
+git commit -F src/ChangeLog
+// Commit the changes with the message being the file ChangLog.
+   (The file ChangeLog is empty originally, so it is everything
+   added)
+
+7.
+git format-patch -1 --stdout > formatted-patch.txt
+// Create a patch for the most recent commit, which is the one
+   I just made.
+
+8.
+// My partner is Di Wu. I renamed his patch as diwu.txt because
+   there has already been a formatted-patch.txt (mine) under pwd.
+git checkout -b partner v3.0
+// Check out version 3.0 again to a new branch partner.
+git am < diwu.txt
+// Apply my partner's patch.
+./bootstrap
+./configure
+make
+make check
+// Like previously in the lab, there are several errors:
+make[3]: Entering directory '/w/home.21/class/classjqu/Desktop/35l/lab7/d1/tests'
+/bin/sh: /bin/sh: cannot execute binary file
+Makefile:1309: recipe for target 'basic.log' failed
+make[3]: *** [basic.log] Error 126
+make[3]: Leaving directory '/w/home.21/class/classjqu/Desktop/35l/lab7/d1/tests'
+Makefile:1288: recipe for target 'check-TESTS' failed
+make[2]: *** [check-TESTS] Error 2
+make[2]: Leaving directory '/w/home.21/class/classjqu/Desktop/35l/lab7/d1/tests'
+Makefile:1403: recipe for target 'check-am' failed
+make[1]: *** [check-am] Error 2
+make[1]: Leaving directory '/w/home.21/class/classjqu/Desktop/35l/lab7/d1/tests'
+Makefile:1016: recipe for target 'check-recursive' failed
+make: *** [check-recursive] Error 1
+
+9.
+make distdir
+// After running this command, we see a new directory:
+   diffutils-3.0.1-bddc.
+emacs diffutils-3.0.1-bddc/ChangeLog
+// The uppermost ChangeLog does belong to my partner.
+git checkout quote
+// I change back to branch quote.
+make distdir
+// After running this command, we see a new directory:
+   diffutils-3.0.1-e616.
+emacs diffutils-3.0.1-e616/ChangeLog
+// The uppermost ChangeLog does belong to me. Thus, both
+   ChangeLog entries work well.
+   
+10.
+I installed xming on my computer. Then I relogged into my
+account on the server with X11 option on in my PuTTY.
+
+export PATH=/usr/local/cs/bin:$PATH
+// I updated my path.
+cd ~eggert/src/gnu/emacs
+// Change directory to our destination.
+gitk
+// Run gitk in this directory. A window pop up on my desktop.
+   I scroll down to around 2015-01-25. The newest merge not
+   newer than 2015-01-25 was made at 17:11:31 on 2015-01-24.
+   It was made by Joakim Verona. The merge merges a branch
+   whose latest commit was "(find-function-regexp): Don't
+   match `defgroup'" with the master branch. Meanwhile, the
+   branch which is not master also continues. The window is
+   gernally divided into 3 subwindows. The upper window is
+   the information of changes of this git, with the tree,
+   the information of the person who made the change. Below
+   it is some bars for moving around each change. The lower
+   part of the window has two subwindows. The left one is
+   the content of the change, while the right one gives the
+   name of the parts in the selected change. 

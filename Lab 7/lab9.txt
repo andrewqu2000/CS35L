@@ -1,0 +1,220 @@
+1.
+git clone ~eggert/src/gnu/diffutils
+// The Diffutils repository is cloned under the current working
+   directory.
+
+2.
+cd diffutils/
+git log > git-log.txt
+// First, I changed my directory to that of the repo. Then I output
+   the log to git-log.txt.
+
+3.
+git tag > git-tags.txt
+// Output the list of tags to git-tags.
+
+4.
+emacs git-log.txt
+// Open the log to find the commit.
+C-s
+maint: quote 'like this' or "like this", not `like this'
+// Find the part of this commit. We find the hash value of this
+   commit: 62ca21c8c1a5aa3488589dcb191a4ef04ae9ed4f
+git format-patch -1 62ca21c8c1a5aa3488589dcb191a4ef04ae9ed4f --stdout > quote-patch.txt
+// Prepare the patch for the commit that we have just found. -1 is
+   declared to make sure we are only doing for one commit.
+
+5.
+git checkout v3.0
+// Checking out version 3.0 using tag "v3.0"
+
+6.
+patch -p1 < quote-patch.txt
+// Apply the patch. Some hunks reported failures. There are also
+   several times when the program does not know which file to
+   patch. I skipped those files according to the spec.
+
+7.
+git status
+Output:
+HEAD detached at v3.0
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+        modified:   NEWS
+        modified:   README
+        modified:   TODO
+        modified:   doc/diagmeet.note
+        modified:   ms/config.bat
+        modified:   ms/config.site
+        modified:   po/en.po
+        modified:   src/analyze.c
+        modified:   src/cmp.c
+        modified:   src/context.c
+        modified:   src/diff.c
+        modified:   src/diff.h
+        modified:   src/diff3.c
+        modified:   src/dir.c
+        modified:   src/ifdef.c
+        modified:   src/io.c
+        modified:   src/sdiff.c
+        modified:   src/side.c
+        modified:   src/system.h
+        modified:   src/util.c
+        modified:   tests/help-version
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+
+        NEWS.orig
+        README-hacking.orig
+        README-hacking.rej
+        README.orig
+        README.rej
+        cfg.mk.orig
+        cfg.mk.rej
+        git-log.txt
+        git-tags.txt
+        ms/config.site.orig
+        quote-patch.txt
+        src/cmp.c.orig
+        src/context.c.orig
+        src/diff.c.orig
+        src/diff.c.rej
+        src/diff.h.orig
+        src/diff3.c.orig
+        src/diff3.c.rej
+        src/dir.c.orig
+        src/sdiff.c.orig
+        src/system.h.orig
+        src/util.c.orig
+        tests/help-version.orig
+
+no changes added to commit (use "git add" and/or "git commit -a")
+// We see that several files have been modified and has not been
+   added, which is what we would expect in this situation.
+
+8.
+I opened the NEWS file, and applied vc-diff by hitting C-x v =.
+The window is splitted into two. The lower buffer now shows
+something like a diff file. To find out the mode, I hit C-h m.
+The buffer is in diff mode, and I look at the functions that are
+available to me. 
+
+9.
+I go into each file that is not .c. I hit c-x v u and input yes
+when asked. Then, I exit the file and go to the next and do the
+same thing. 
+
+For files that are indeed .c. I go into each of them. Then I hit
+c-x v = to check each hunk, and use C-c C-c to go to the original
+code. For hunks that make changes to character string constants,
+I leave them alone. Otherwise, I use C-x C-c C-a to revert the
+change made by the hunk.
+
+10.
+ls src/*.c.rej
+// Find all the rejected patches. The output shows src/diff3.c.rej
+   and src/diff.c.rej.
+   Then I first checked src/diff3.c.rej. There is only one change:
+-  N_("-i                          append `w' and `q' commands to ed scripts"),                                                
++  N_("-i                          append 'w' and 'q' commands to ed scripts"),
+   I go into src/diff3.c to make this change. It has failed probably
+   beacause the sequence of the adjacent lines are different.
+   Then, I check src/diff.c.rej. There are a lot more changes than
+   the other file, but they are still of the same idea. I manually
+   changed all to ` into '.
+
+11.
+Before really doing anything, I first copied the txt files I created
+for previous questions to a different directory. Then, I used the
+following command to remove all untracked files:
+git clean -f
+
+12.
+git status
+Output:
+HEAD detached at v3.0
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+        modified:   src/cmp.c
+        modified:   src/diff.c
+        modified:   src/diff3.c
+        modified:   src/dir.c
+        modified:   src/sdiff.c
+        modified:   src/util.c
+
+no changes added to commit (use "git add" and/or "git commit -a")
+// Indeed, the command reports half a dozen files. 
+git diff > quote-3.0-patch.txt
+// I output the patch the file directed in the spec.
+wc -l < quote-3.0-patch.txt
+Output:
+326
+// I count the number of lines in the file is 326. It is within the
+   range of "three or four hundred lines long" suggested by the spec.
+
+13.
+ldd --version
+// I check the version of the GNU C library. The version is not 2.16,
+   so we don't need the patch.
+./bootstrap
+./configure
+make
+make check
+// Run each step according to README-hacking.
+   The command "make check" reports several errors shown below, but
+   the behavior of the program is generally correct:
+   make[3]: Entering directory '/w/home.21/class/classjqu/Desktop/35l/lab7/diffutils/tests'
+   /bin/sh: /bin/sh: cannot execute binary file
+   Makefile:1309: recipe for target 'basic.log' failed
+   make[3]: *** [basic.log] Error 126
+   make[3]: Leaving directory '/w/home.21/class/classjqu/Desktop/35l/lab7/diffutils/tests'
+   Makefile:1288: recipe for target 'check-TESTS' failed
+   make[2]: *** [check-TESTS] Error 2
+   make[2]: Leaving directory '/w/home.21/class/classjqu/Desktop/35l/lab7/diffutils/tests'
+   Makefile:1403: recipe for target 'check-am' failed
+   make[1]: *** [check-am] Error 2
+   make[1]: Leaving directory '/w/home.21/class/classjqu/Desktop/35l/lab7/diffutils/tests'
+   Makefile:1016: recipe for target 'check-recursive' failed
+   make: *** [check-recursive] Error 1
+/src/diff . -
+Output:
+src/diff: cannot compare '-' to a directory
+// The output is the same as the linux utility without the symbol `, so
+   it does the right thing.
+src/diff --help
+// The output is the help page. It does the right thing as there is no `,
+   but only '.
+
+14.
+git clone ~eggert/src/gnu/diffutils temp
+// Clone another repo of diffutils to temp.
+cd temp
+git checkout v3.0
+// Change directory to the repo and chekout version 3.0.
+cd ..
+// Change directory back.
+mkdir diffutils-3.0
+// Make a directory to store the source code of version 3.0.
+cp -r temp/src diffutils-3.0/
+// Copy the source code to the destination directory.
+mkdir diffutils-3.0-patch
+// Make a directory to store the source code of the patched
+   version.
+cp -r diffutils/src diffutils-3.0-patch
+// Copy the patched source code to the destination.
+diffutils/src/diff -pru diffutils-3.0 diffutils-3.0-patch >quote-3.0-test.txt
+// Compare the source code of the two versions using my diff
+   implementation.
+
+15.
+diff -u quote-3.0-test.txt quote-3.0-patch.txt > change.diff
+// Compare the two files and see the differences between them.
+   There are a lot of differences between these files, but none
+   of them really matters for the behavior of the program. Most
+   differences are the paths differences or some exclusive .o
+   files.
