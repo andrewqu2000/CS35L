@@ -1,0 +1,178 @@
+1.
+The disk space used to represent the working files in this directory
+is 159MB. The following command is used to check disk usage:
+du -h ~eggert/src/gnu/emacs-CS-35L
+The last entry is the whole directory, which is 509MB. A subtraction
+with the .git folder is 159MB.
+
+Using the same command, we find the entry:
+350M    /u/cs/fac/eggert/src/gnu/emacs-CS-35L/.git
+This is the Git repository. 350MB is used to represent it.
+
+From the above command, we find a pariticularly large directory:
+/u/cs/fac/eggert/src/gnu/emacs-CS-35L/.git/objects/pack
+Then we inspect all files, including regular files, using the following
+command:
+du -h -a /u/cs/fac/eggert/src/gnu/emacs-CS-35L/.git/
+We notice the following regular files (type confirmed with ls the
+directory that they are in) to be particularly large:
+24M     /u/cs/fac/eggert/src/gnu/emacs-CS-35L/.git/objects/pack/pack-24e56b1749b9320c560213d9045fa6cee42b4174.idx
+311M    /u/cs/fac/eggert/src/gnu/emacs-CS-35L/.git/objects/pack/pack-24e56b1749b9320c560213d9045fa6cee42b4174.pack
+The .pack file is a packfile, and the .idx file is an index. They
+are large because the packfile contains the contents of all the objects
+that were removed from your filesystem and the index contains offsets
+into that packfile. They effectively merge multiple objects, so they
+contain information of them.
+
+2.
+We cd to the git repo with:
+cd /u/cs/fac/eggert/src/gnu/emacs-CS-35L/.git
+
+Then, we find there are 176 branches local to the repository with:
+git branch | wc -l
+
+The idea is to first list all the branches and then count them.
+
+There are 177 remote branches, similarly found by:
+git branch -r | wc -l
+
+3.
+Using the following command, we get a list of 1 entry of remote
+repositories:
+git remote
+The output is "origin". There is only one remote repository.
+
+Using the following command, we try to find more information of the
+remote repositories:
+git remote -v
+The output is:
+origin  https://git.savannah.gnu.org/git/emacs.git (fetch)
+origin  https://git.savannah.gnu.org/git/emacs.git (push)
+The remote repository origin is at
+https://git.savannah.gnu.org/git/emacs.git.
+
+4.
+The ten local branches most recently committed to are:
+  master
+  scratch/joaot/make-completion-at-point-function
+  feature/windows-with-utils
+  scratch/completion-api
+  scratch/a-modest-completion-redesign-proposal
+  scratch/fido-mode
+  feature/gnus-select2
+  feature/extend_face_id
+  scratch/jit-lock-antiblink-cleaned-up
+  emacs-26
+
+They are the first ten entries of the output from the following
+command:
+git branch --sort=-committerdate
+
+The command sorts all branches in the descending order of date
+of commit.
+
+5.
+We use the following command to count the number of commits in the
+master branch:
+git rev-list --count master
+The output is:
+139583
+Thus, there are 139583 commits in the master branch.
+
+6.
+We first use the following command to count the number of commits
+in any branch:
+git rev-list --all --count
+The output is:
+143910
+Thus, the previous output divided by this output gives the percentage
+of the commits that are in any branch, are also in the master branch:
+96.99%.
+
+7.
+We use the following command to count the number of commits by each
+author since December 31, 2012 so that the range should starts in
+2013:
+git shortlog -n -s --since="2012-12-31"
+
+The output is in a descending order. The first ten entries, which are
+the ten people who authored the most master-branch commits that were
+committed in the year 2013 or later, are:
+  3691  Eli Zaretskii
+  3647  Glenn Morris
+  3605  Paul Eggert
+  1806  Lars Ingebrigtsen
+  1784  Stefan Monnier
+  1571  Michael Albinus
+   619  Dmitry Gutov
+   576  Noam Postavsky
+   471  Alan Mackenzie
+   469  Juri Linkov
+The number on the left of each name is the number of commits each of
+them authored during that period.
+
+8.
+I logged in again using PuTTY with X11 enabled.
+I first cd to ~eggert/src/gnu/emacs-CS-35L.
+Then I enter "gitk".
+The window of gitk pops up.
+I copy each ID to the blank for SHA1 ID and then hit "Go to:". Then,
+I visually inspect them.
+Here is their relationship:
+*  98ac36efe4ce4bd3a0bca76fc73ce6c7abaa4371
+| \
+|  \
+... ...
+|    \
+*     |  abcb2e62dae6aa26308f7ac9efc89247f89cbe65
+|\    |
+| \   |
+|  \  ...
+|   \ |
+|    \|
+|     *  49cd561dc62ea6b3fbedab7aef0f020733f4cf09
+...   |
+| ... ...  
+| | |/
+| | *  00e4e3e9d273a193620c3a4bb4914e555cb8e343
+| |/
+| *  820739bbb572b30b6ce45756c9960e48dca859af
+| |
+| ...
+* |  0c06b93c1e467debd401eb0b3be4652fde14fa95
+|\| 
+| |  ...
+| .../
+| | /
+| |/
+| *  5490ccc5ebf39759dfd084bbd31f464701a3e775
+| |
+...
+| |
+| *  625cee531623feddbe3174fad52c7db96ec60bb3
+* |  977cd6cb28a37744966ec62f70cf62659f6f302a
+\ /
+ *  4ea37c2b8b0c5a68fde59770c3536195e0972217
+
+First, we have commit 4ea37c2b8b0c5a68fde59770c3536195e0972217 in
+the repository. After this commit, two branches are formed. The
+first commit in each branch are respectively
+977cd6cb28a37744966ec62f70cf62659f6f302a and
+625cee531623feddbe3174fad52c7db96ec60bb3. Both branches continue
+to be modified. At 5490ccc5ebf39759dfd084bbd31f464701a3e775, one
+of the branches further branches into two. However, at
+0c06b93c1e467debd401eb0b3be4652fde14fa95, one of the sub-branches
+is merged onto the other original branch, but it still continues
+to develop to 820739bbb572b30b6ce45756c9960e48dca859af, where it
+branches again. One of the sub-branches branches for another time
+at 00e4e3e9d273a193620c3a4bb4914e555cb8e343. All branches continue.
+The last-mentioned sub-branch merge back to the the branch created
+at the very beginning after 49cd561dc62ea6b3fbedab7aef0f020733f4cf09,
+while it also continues to develop at the same time. The merge
+happens at abcb2e62dae6aa26308f7ac9efc89247f89cbe65. The two branches
+merge again in the exactly same manner at
+98ac36efe4ce4bd3a0bca76fc73ce6c7abaa4371.
+
+My hypothesis is that each branch happens when two prbolems started
+to be solved independently, while each merge happens when one of the
+problems is partially solved so that it could be integrated back.
