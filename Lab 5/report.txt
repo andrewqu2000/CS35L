@@ -1,0 +1,302 @@
+For both version, the idea of the programs is the same. The program
+first checks the number of argument, then whether the length of
+the arguments are the same, and last whether there are duplicates in
+the first argument. After the checking, the program will get the
+first character from stdin. From there, it runs a loop where we
+first substitue the character if it needs a translation, then
+write the (un)substituted character in stdout, and last read the
+next character until we reach the end of the stream. Once there is
+a problem in reading or writing, we will ouput an error and exit
+with 1. If we reach the end, and there is no problem, the program
+will exit normally. 
+
+1.
+After writing the program, I compiled the program with:
+gcc -std=c11 tr2b.c -o tr2b
+Then I run the program with:
+echo 'ab\[-c' | ./tr2b 'a\[-' 'ptsd'
+The ouput is pbtsdc.
+
+2.
+After writing the program, I compiled the program with:
+gcc -std=c11 tr2u.c -o tr2u
+Then I run the program with:
+echo 'ab\[-c' | ./tr2u 'a\[-' 'ptsd'
+The ouput is pbtsdc.
+
+3.
+We create a large file of size 5,000,000 bytes with:
+head --bytes=5000000 /dev/urandom > bigfile.txt
+(1) strace -c -o bt ./tr2b 'a\[-' 'ptsd' < bigfile.txt
+This tests tr2b for copying a file to the terminal.
+The output reports 20390 system calls in total. Among those, 19751
+are writes, and 613 are reads.
+ time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 97.70    0.131402           7     19751           write
+  2.24    0.003011           5       613           read
+  0.02    0.000025           6         4           mprotect
+  0.02    0.000022           6         4           fstat
+  0.02    0.000022          22         1           munmap
+  0.01    0.000019           2         9           mmap
+  0.00    0.000000           0         2           open
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         1           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.134501                 20390         1 total
+
+(2) strace -o bf ./tr2b 'a\[-' 'ptsd' < bigfile.txt > bigfileb.txt
+This tests tr2b for copying a file to another.
+The output reports 1250 system calls in total, far less then copying
+to the terminal. Among those, 611 are writes, and 613 are reads,
+same as previous. Thus, copying to another file uses much less
+writes.
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 71.90    0.000921           2       611           write
+ 28.10    0.000360           1       613           read
+  0.00    0.000000           0         2           open
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         4           fstat
+  0.00    0.000000           0         9           mmap
+  0.00    0.000000           0         4           mprotect
+  0.00    0.000000           0         1           munmap
+  0.00    0.000000           0         1           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.001281                  1250         1 total
+
+(3) strace -c -o ut ./tr2u 'a\[-' 'ptsd' < bigfile.txt
+This tests tr2u for copying a file to the terminal.
+The output reports 10000024 system calls in total, way more than any
+previous case. Among them 5000000 are writes, and 5000002 are reads.
+Both operations are a lot more previous cases, and are roughly the
+number of bytes of the file.
+------ ----------- ----------- --------- --------- ----------------
+ 55.91   31.055878           6   5000000           write
+ 44.09   24.485818           5   5000002           read
+  0.00    0.000000           0         2           open
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         2           fstat
+  0.00    0.000000           0         7           mmap
+  0.00    0.000000           0         4           mprotect
+  0.00    0.000000           0         1           munmap
+  0.00    0.000000           0         1           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00   55.541696              10000024         1 total
+
+(4) strace -c -o ut ./tr2u 'a\[-' 'ptsd' < bigfile.txt > bigfileu.txt
+This tests tr2u for copying a file to another.
+The output reports 10000024 system calls in total, the same as
+copying to the terminal. Among them 5000000 are writes, and 5000002
+are reads. These numbers are all same as copying to terminal. Thus,
+this version does not have any difference between copying to a file
+and copying to the terminal. This version uses far more system
+calls.
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 54.71   29.145411           6   5000000           write
+ 45.29   24.123966           5   5000002           read
+  0.00    0.000041          10         4           mprotect
+  0.00    0.000022          22         1           munmap
+  0.00    0.000000           0         2           open
+  0.00    0.000000           0         2           close
+  0.00    0.000000           0         2           fstat
+  0.00    0.000000           0         7           mmap
+  0.00    0.000000           0         1           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00   53.269440              10000024         1 total
+
+4.
+We test the time with the file of 5,000,000 bytes created previously.
+(1) time ./tr2b 'a\[-' 'ptsd' < bigfile.txt
+Copying to terminal using tr2b gives the following time:
+real    0m1.116s
+user    0m0.539s
+sys 0m0.165s
+
+(2) time ./tr2b 'a\[-' 'ptsd' < bigfile.txt > bigfilebt.txt
+Copying to another file using tr2b gives the following time:
+real    0m0.300s
+user    0m0.246s
+sys     0m0.006s
+Each of the time is less than half of the previous case. System time
+is even shorter.
+
+(3) time ./tr2u 'a\[-' 'ptsd' < bigfile.txt
+Copying to terminal using tr2u gives the following time:
+real    0m11.552s
+user    0m3.197s
+sys 0m8.341s
+The real time of tr2u is about 10 times longer than the first case.
+User time is more than 5 times longer than the first case. System
+time is about 50 times longer than the first case.
+
+(4) time ./tr2u 'a\[-' 'ptsd' < bigfile.txt > bigfileut.txt
+Copyting to another file using tr2u gives the following time:
+real    0m12.506s
+user    0m3.340s
+sys 0m9.122s
+All tree times are pretty close to the third case. Thus, their speed
+are pretty similar.
+
+From the four comparisons, we see that tr2b are faster than tr2u in
+general. Copying to file or terminal makes little difference for
+tr2u, but copying to file is noticeably faster than copying to
+terminal for tr2b. We see that using library functions is faster
+than directly using system calls.
+
+
+Homework
+
+Performance:
+sfrobu:
+The time used for 0 line of input is:
+real    0m0.003s
+user    0m0.001s
+sys     0m0.000s
+The time used for 1 line of input is:
+real    0m0.003s
+user    0m0.002s
+sys     0m0.000s
+The time used for 10 lines of input is:
+real    0m0.004s
+user    0m0.000s
+sys     0m0.003s
+The time used for 100 lines of input is:
+real    0m0.013s
+user    0m0.002s
+sys     0m0.010s
+The time used for 10000 lines of input is:
+real    0m0.901s
+user    0m0.231s
+sys     0m0.664s
+The time used for a million lines of input is:
+real    1m35.544s
+user    0m25.388s
+sys     1m9.668s
+Comparing the result of tests, the real time for
+10000 lines is about 70 times larger than 100 lines.
+Meanwhile, the real time for one million lins is
+about 100 times larger than 10000 lines.The case of
+100 lines is about 3 times larger than the case of 10
+lines. The growth is obviously not log, but it is also
+pretty smooth. It does not increase dramatically with
+the number of lines. Thus, it seems to me like a linear
+function with a constant term.
+sfrob:
+The time used for 0 line of input is:
+real    0m0.014s
+user    0m0.001s
+sys     0m0.010s
+The time used for 1 line of input is:
+real    0m0.004s
+user    0m0.001s
+sys     0m0.001s
+The time used for 10 lines of input is:
+real    0m0.004s
+user    0m0.002s
+sys     0m0.000s
+The time used for 100 lines of input is:
+real    0m0.004s
+user    0m0.002s
+sys     0m0.000s
+The time used for 10000 lines of input is:
+real    0m0.091s
+user    0m0.079s
+sys     0m0.005s
+The time used for a million lines of input is:
+real    0m12.339s
+user    0m11.333s
+sys     0m0.554s
+We can see that sfrob runs in very short time for 0, 1,
+10 and 100 lines. The real time for a million lines of
+input is around 100 times larger than that for 10000
+lines. The runtime grows noticeably but not dramatically.
+It seems like to be a linear function.
+
+In summary for both programs. Both programs are likely
+to run in a linear time. However, sfrob is significantly
+faster than sfrobu.
+
+
+Memory allocation:
+Using strace for the file of 1 line, we see:
+ time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 51.12    0.000182           3        56           write
+ 11.80    0.000042          42         1           execve
+  9.83    0.000035           5         7           mmap
+  6.74    0.000024           6         4           mprotect
+  3.93    0.000014           7         2           open
+  3.09    0.000011           4         3           fstat
+  3.09    0.000011          11         1           munmap
+  2.81    0.000010           3         4           brk
+  2.53    0.000009           3         3           read
+  2.25    0.000008           8         1         1 access
+  1.12    0.000004           2         2           close
+  1.12    0.000004           2         2           lseek
+  0.56    0.000002           2         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.000356                    87         1 total
+Using strace for the file of 100 lines, we see:
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.022105           4      5501           write
+  0.00    0.000000           0         4           read
+  0.00    0.000000           0         3           open
+  0.00    0.000000           0         3           close
+  0.00    0.000000           0         4           fstat
+  0.00    0.000000           0         2           lseek
+  0.00    0.000000           0         8           mmap
+  0.00    0.000000           0         4           mprotect
+  0.00    0.000000           0         2           munmap
+  0.00    0.000000           0         4           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.022105                  5538         1 total
+Using strace for the file of 10000 lines, we see:
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 99.97    2.241368           4    550001           write
+  0.02    0.000441         110         4           read
+  0.01    0.000183          37         5           munmap
+  0.00    0.000089           1       143           mremap
+  0.00    0.000021           7         3           open
+  0.00    0.000019           2        11           mmap
+  0.00    0.000010           3         3           close
+  0.00    0.000009           5         2           lseek
+  0.00    0.000005           1         4           fstat
+  0.00    0.000000           0         4           mprotect
+  0.00    0.000000           0         4           brk
+  0.00    0.000000           0         1         1 access
+  0.00    0.000000           0         1           execve
+  0.00    0.000000           0         1           arch_prctl
+------ ----------- ----------- --------- --------- ----------------
+100.00    2.242145                550187         1 total
+
+We notice that apart from write, mremap also vaires a lot in the
+programs. As we need to frequently update the array for a large file,
+so there will be increasing number of reallocation. Thus, mremap
+should be the function to reallocate memory. According to this
+deduction, mmap would be allocatin memory, and munmap would be
+deallocatin memory. The arguments for these system calls should be
+pretty much the same as those counterpart library functions, as those
+are necessary to serve the purposes of these system calls. System call
+mmap at least needs the length of the memory needed; munmap would at
+least need the pointer to the memory that is going to be freed; mremap
+would at least need the pointer to the memory and the length of the
+new memory.
