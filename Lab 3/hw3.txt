@@ -1,0 +1,52 @@
+1.
+The performance of the two versions of ls should generally stay the same
+because the amount of code that has been modified in the original filed
+is small. There are not a lot of commands added or removed. Thus, there
+should not be a huge impact on the performance. In addition, there is no
+obvious difference in performance between two versions observed in tests.
+However, it would be possible for some patch to impact the performance
+negatively because of extra operations introduced.
+
+2.
+It should be noticed there might be other applications or scripts that
+depend on ls, so their behaviors also depend on the behaviors of ls. Some
+of them might take the assumption of the buggy behavior, so the modified
+version might result in bugs in other things. For the purpose of my
+application, this version does not seem to introduce any problem, unless
+there are other commands in my application that expect the original
+behavior of ls.
+
+3.
+When this script is invoked on /dev/null, which is an empty file, the
+following meassges will be outputted:
+Traceback (most recent call last):
+  File "randline.py", line 70, in <module>
+    main()
+  File "randline.py", line 64, in main
+    sys.stdout.write(generator.chooseline())
+  File "randline.py", line 34, in chooseline
+    return random.choice(self.lines)
+  File "/usr/local/cs/Python-2.7.16/lib/python2.7/random.py", line 277, \
+  in choice
+    return seq[int(self.random() * len(seq))]  # raises IndexError if \
+    seq is empty
+IndexError: list index out of range
+The program returns an error. The file is empty, so there is no line to
+choose and return. Then, seq used in function choice is also empty, so an
+index error is returned.
+
+4.
+Running the program in Python 3 returns the following error:
+  File "randline.py", line 65
+    except IOError as (errno, strerror):
+                      ^
+SyntaxError: invalid syntax
+This error is because the different syntax between Python 3 and Python 2.
+Python 2 can automatically unpack an exception as a tuple and pass it as
+an argument, but Python 3 disables this. Thus, the program will think this
+is a syntax error in Python 3.
+
+5.
+When the script is invoked with Python 2, it still runs normally. This is
+because all the commands used in the program are compatible with both
+Python 3 and Python 2.

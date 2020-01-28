@@ -1,0 +1,136 @@
+1. 
+wget ftp://ftp.gnu.org/gnu/coreutils/coreutils-8.29.tar.xzwget \
+0;136;0cftp://ftp.gnu.org/gnu/coreutils/coreutils-8.29.tar.xz
+// This command downloads the tarball file of Coreutils 8.29.
+
+wget ftp://ftp.gnu.org/gnu/coreutils/coreutils-8.29.tar.xz.sig
+// This command downloads the signature file.
+
+gpg --verify --keyring ./gnu-keyring.gpg coreutils-8.29.tar.xz.sig
+// Without downloading the keyring, it reports "Can't check signature:
+No public key"
+
+wget https://ftp.gnu.org/gnu/gnu-keyring.gpg
+// Downloads the GNU keyring.
+
+gpg --verify --keyring ./gnu-keyring.gpg coreutils-8.29.tar.xz.sig
+// The command returns:
+gpg: Good signature from "Pádraig Brady <P@draigBrady.com>"
+gpg:                 aka "Pádraig Brady <pbrady@redhat.com>"
+gpg:                 aka "Pádraig Brady <pixelbeat@gnu.org>"
+But it also gives the following warning:
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to
+	      the owner.
+The warning is because the the signature is not trusted, and the
+signature might be produced by someone else.
+
+
+2.
+tar -xJvf coreutils-8.29.tar.xz
+// This command unzip the file through xz.
+
+mkdir ~/coreutilsInstall
+// This command creates a subdirectory under the home directory to
+install Coreutils.
+
+cd coreutils-8.29/
+// Change directory to the unzipped files.
+
+emacs INSTALL
+// Read the INSTALL file.
+
+./configure --prefix /u/eng/class/classjqu/coreutilsInstall
+// Configure the system. The status are shown on the screen sequentially.
+The --prefix option ensures that the program will be installed under the
+proper directory.
+
+make
+// Compile the package. Progress will be outputted on the screen.
+
+make install
+// Install the package. Progress will be outputted on the screen.
+
+
+3.
+cd ~/coreutilsInstall/bin
+// Change to the directory under which ls in the package is.
+
+./ls -a -A
+// This command lists all files, including . and .., under this directory,
+which is a bug as -A should override -a.
+
+./ls -A -a
+// This command does exactly the same thing as the previuos command, which
+is expected for -a to override -A.
+
+
+4.
+cd ~/Desktop/35l/lab3/coreutils-8.29/
+// Change directory into the source file.
+
+emacs patch_file
+// Create a file where the content of the file is copied to.
+Then the content of the patch is copied to here.
+
+patch –p1 < patch_file
+// This command reports a failure and an offset in NEWS, but it should
+not affect the effect as it's pure text in this file and the other hunks
+did not report any problem. 
+
+
+5.
+autoreconf -fi
+// We use this command because directly calling make causes error. This
+command updated all configuration files and copied missing files.
+
+make
+// Recompile all the changed files. However, this command outputs a lot
+of information. It seems a complete reconfiguration has been run and all
+files have been recompiled. Most of them would be unnecessary except those
+we modified and those depend on them, because there are not that many files
+that depends on what we have modified. This redundancy is propbably due to
+the autoreconf commands that reconfigures everything.
+After executing this command we see:
+/bin/sh ./config.status --recheck
+// This seems to reconfigure all the files as a lot of statements of
+"checking ..." are shown.
+After reconfiguration, the command starts to recompile a lot of files
+probably due to the large amount of reconfiguration has been done.
+
+6.
+cd src
+// We change directory to src in order to test the modified version of ls.
+
+./ls -aA
+// This is the test which the unmodified version of ls fails. Now, it does
+not output . and .., which is our expected behavior. Thus, the bug has been
+fixed.
+
+~/coreutilsInstall/bin/ls -aA
+// The unmodified version of ls still outputs . and .., which is the bug.
+
+For a empty directory, the modified version outputs nothing, while the
+unmodified version outputs . and ...
+
+[classjqu@lnxsrv09 ~/Desktop/35l/lab3]$ ~/coreutilsInstall/bin/ls -A test
+.hidden
+[classjqu@lnxsrv09 ~/Desktop/35l/lab3]$ ~/coreutilsInstall/bin/ls -a test
+.  ..  .hidden
+[classjqu@lnxsrv09 ~/Desktop/35l/lab3]$ ~/coreutilsInstall/bin/ls -aA test
+.  ..  .hidden
+[classjqu@lnxsrv09 ~/Desktop/35l/lab3]$ ~/coreutilsInstall/bin/ls -Aa test
+.  ..  .hidden
+Using the unmodified version to ls a directory with a hidden file, we can
+see that -a always overrides -A.
+
+[classjqu@lnxsrv09 ~/Desktop/35l/lab3]$ ./coreutils-8.29/src/ls -A test
+.hidden
+[classjqu@lnxsrv09 ~/Desktop/35l/lab3]$ ./coreutils-8.29/src/ls -a test
+.  ..  .hidden
+[classjqu@lnxsrv09 ~/Desktop/35l/lab3]$ ./coreutils-8.29/src/ls -aA test
+.hidden
+[classjqu@lnxsrv09 ~/Desktop/35l/lab3]$ ./coreutils-8.29/src/ls -Aa test
+.  ..  .hidden
+Using the modified version to ls a directory with a hidden file, we can see
+that -a and -A overrides each other properly.
