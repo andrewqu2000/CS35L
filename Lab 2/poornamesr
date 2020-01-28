@@ -1,0 +1,217 @@
+#!/bin/sh
+
+function baspoor {
+    declare -a files
+    # Loop every file under pwd
+    IFS=$'\n'
+    for a in $( ls -1a )
+    do
+	# Legal characters
+	if [[ $a = *[^a-zA-Z._\-]* ]]
+	then
+	    if [ -d "$a" ] && ! [ -L "$a" ]
+	    then
+		echo $(pwd)/$a/
+	    else
+		echo $(pwd)/$a
+	    fi
+	# Starting with -
+	elif [[ "$a" =~ ^\- ]]
+	then
+	    if [ -d "$a" ] && ! [ -L "$a" ]
+            then
+		echo $(pwd)/$a/
+            else
+		echo $(pwd)/$a
+	    fi
+	# Starting with .
+	elif [[ "$a" =~ ^\. ]] && ! ( [[ "$a" =~ ^\.$ ]] || [[ "$a" =~ ^\.\.$ ]] )
+	then
+	    if [ -d "$a" ] && ! [ -L "$a" ]
+            then
+		echo $(pwd)/$a/
+            else
+		echo $(pwd)/$a
+	    fi
+	# Number of characters
+	elif [[ $(echo $a | wc -m) -gt 15 ]]
+	then
+	    if [ -d "$a" ] && ! [ -L "$a" ]
+            then
+		echo $(pwd)/$a/
+            else
+		echo $(pwd)/$a
+	    fi
+	else
+	    if [[ $(find -maxdepth 1 -iname "$a" | wc -w) -gt 1 ]]
+	    then
+		if [ -d "$a" ] && ! [ -L "$a" ]
+		then
+                    echo $(pwd)/$a/
+		else
+                    echo $(pwd)/$a
+		fi
+	    fi
+	    
+    	    # found=0
+    	    # printed=0
+    	    # temp=0
+    	    # # See if there is the same in the array
+    	    # for b in "${files[@]}"
+    	    # do
+    	    # 	astring=$(echo $a | tr [:upper:] [:lower:])
+    	    # 	bstring=$(echo $b | tr [:upper:] [:lower:])
+    	    # 	if [[ "$astring" == "$bstring" ]]
+    	    # 	then
+    	    # 	    if [[ $printed -eq 0 ]]
+    	    # 	    then
+	    # 		if [ -d "$a" ] && ! [ -L "$a" ]
+    	    # 		then
+    	    # 		    echo $(pwd)/$a/
+    	    # 		else
+    	    # 		    echo $(pwd)/$a
+    	    # 		fi
+    	    # 		printed=1
+    	    # 	    fi
+    	    # 	    if [[ $found -eq 1 ]]
+    	    # 	    then
+    	    # 		found=0
+    	    # 		break
+    	    # 	    fi
+    	    # 	    found=1
+    	    # 	    temp= $b
+    	    # 	fi
+    	    # done
+    	    # if [[ $found -eq 1 ]]
+    	    # then
+	    # 	if [ -d "$temp" ] && ! [ -L "$temp" ]
+    	    # 	then
+    	    # 	    echo $(pwd)/$temp/
+	    # 	else
+    	    # 	    echo $(pwd)/$temp
+	    # 	fi
+    	    # fi
+	    
+    	    # # Add this one to the array
+    	    # files+=("$a")
+	fi
+    done
+}
+
+function recpoor {
+    IFS=$'\n'
+    for b in $( find -P -mindepth 1 -printf "%P\n" )
+    do
+	
+	a=$( find -P -regex './'"$b" -printf "%f\n" )
+	# Legal characters
+	if [[ $a = *[^a-zA-Z._\-]* ]]
+	then
+	    if [ -d "$a" ] && ! [ -L "$a" ]
+	    then
+		echo $(pwd)/$b/
+	    else
+		echo $(pwd)/$b
+	    fi
+	# Starting with -
+	elif [[ "$a" =~ ^\- ]]
+	then
+	    if [ -d "$a" ] && ! [ -L "$a" ]
+            then
+		echo $(pwd)/$b/
+            else
+		echo $(pwd)/$b
+	    fi
+	# Starting with .
+	elif [[ "$a" =~ ^\. ]] && ! ( [[ "$a" =~ ^\.$ ]] || [[ "$a" =~ ^\.\.$ ]] )
+	then
+	    if [ -d "$a" ] && ! [ -L "$a" ]
+            then
+		echo $(pwd)/$b/
+            else
+		echo $(pwd)/$b
+	    fi
+	# Number of characters
+	elif [[ $(echo $a | wc -m) -gt 15 ]]
+	then
+	    if [ -d "$a" ] && ! [ -L "$a" ]
+            then
+		echo $(pwd)/$b/
+            else
+		echo $(pwd)/$b
+	    fi
+	else
+	    if [[ $(find -maxdepth 1 -iname "$a" | wc -w) -gt 1 ]]
+	    then
+		if [ -d "$a" ] && ! [ -L "$a" ]
+		then
+                    echo $(pwd)/$b/
+		else
+                    echo $(pwd)/$b
+		fi
+	    fi
+	fi
+    done
+}
+
+# Multiple arguements
+if [ "$#" -gt 2 ]
+then
+    echo "ERROR: There are more than more one operands." >&2
+    exit 1
+# Two arguments
+elif [ "$#" == 2 ]
+then
+    # First argument is '-r'
+    if ! [[ $1 =~ ^-r$ ]]
+    then
+	echo "ERROR: Invalid option." >&2
+	exit 5
+    fi
+    if ! [ -e "$2" ]
+    then
+        echo "ERROR: Directory not found." >&2
+        exit 2
+    fi
+    if [ -L "$2" ] || ! [ -d "$2" ]
+    then
+       echo "ERROR: Not a directory." >&2
+       exit 3
+    fi
+    if [[ $2 =~ ^- ]]
+    then
+        echo "ERROR: Directory strats with '-'"
+        exit 4
+    fi
+    cd "$2"  || ( echo "ERROR: Cannot examine the direcotory." >&2 )
+    recpoor
+# One argument
+elif [ "$#" == 1 ]
+then
+    if ! [[ $1 =~ ^-r$ ]]
+    then
+	if ! [ -e "$1" ]
+	then
+	    echo "ERROR: Directory not found." >&2
+	    exit 2
+	fi
+	if [ -L "$1" ] || ! [ -d "$1" ]
+	then
+	    echo "ERROR: Not a directory." >&2
+	    exit 3
+	fi
+	if [[ $1 =~ ^- ]]
+	then
+	    echo "ERROR: Directory strats with '-'"
+	    exit 4
+	fi
+      	cd "$1"  || ( echo "ERROR: Cannot examine the direcotory." >&2 )
+	baspoor
+    else
+	recpoor
+    fi
+
+# No argument
+else
+    baspoor
+fi

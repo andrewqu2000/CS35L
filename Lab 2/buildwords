@@ -1,0 +1,6 @@
+#! /bin/sh
+
+sed 's/?//g' | sed 's/<u>//g' | sed 's/<\/u>//g' |
+    sed -r 's/ *<td[^>]*>(.+)<\/td> */\1/' |
+    tr [:upper:] [:lower:] | tr '`' "'" |
+    sed -r "/[^pk'mnwlhaeiou ]+/d" | tr -cs "[pk'mnwlhaeiou]" '[\n*]' | sort -u
