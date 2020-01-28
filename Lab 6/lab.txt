@@ -1,0 +1,241 @@
+1.
+gcc -lgmp simpgmp.c
+// Compile the program with GMP
+
+2.
+./a.out 24
+// Compute 2**24. The output is 16777216.
+./a.out 16777216
+// Compute 2**(2**24). The output starts with "1818" and ends with
+"7536".
+./a.out 16777216 | wc -m
+// Count the number of characters in the output of 2**(2**24). The
+   output is 5050447, but there is a newline character at the end of
+   the output. Thus, there are actually 5050446 decimal digits. The
+   output is the same what is expected in the spec.
+
+3.
+ldd a.out
+// Check the dynamic libraries which the program uses. The output is:
+        linux-vdso.so.1 =>  (0x00007ffe4c1fa000)
+        libgmp.so.10 => /lib64/libgmp.so.10 (0x00007f811386d000)
+        libc.so.6 => /lib64/libc.so.6 (0x00007f811349f000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007f8113ae5000)   
+   The .so's are all dynamic libraries.
+
+4.
+strace ./a.out
+The output is:
+execve("./a.out", ["./a.out"], [/* 43 vars */]) = 0
+brk(NULL)                               = 0x21ac000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f86a4c04000
+access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such file or directory)
+open("/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=168090, ...}) = 0
+mmap(NULL, 168090, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7f86a4bda000
+close(3)                                = 0
+open("/lib64/libgmp.so.10", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\0\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\200\304\0\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=495720, ...}) = 0
+mmap(NULL, 2584736, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7f86a476c000
+mprotect(0x7f86a47e2000, 2093056, PROT_NONE) = 0
+mmap(0x7f86a49e1000, 12288, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x75000) = 0x7f86a49e1000
+close(3)                                = 0
+open("/lib64/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0P&\2\0\0\0\0\0"..., 832) = 832
+fstat(3, {st_mode=S_IFREG|0755, st_size=2156072, ...}) = 0
+mmap(NULL, 3985888, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7f86a439e000
+mprotect(0x7f86a4561000, 2097152, PROT_NONE) = 0
+mmap(0x7f86a4761000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1c3000) = 0x7f86a4761000
+mmap(0x7f86a4767000, 16864, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7f86a4767000
+close(3)                                = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f86a4bd9000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f86a4bd7000
+arch_prctl(ARCH_SET_FS, 0x7f86a4bd7740) = 0
+mprotect(0x7f86a4761000, 16384, PROT_READ) = 0
+mprotect(0x7f86a49e1000, 8192, PROT_READ) = 0
+mprotect(0x600000, 4096, PROT_READ)     = 0
+mprotect(0x7f86a4c05000, 4096, PROT_READ) = 0
+munmap(0x7f86a4bda000, 168090)          = 0
+write(2, "./a.out: usage: ./a.out exponent"..., 33./a.out: usage: ./a.out exponent
+) = 33
+exit_group(1)                           = ?
++++ exited with 1 +++
+// These are all the system calls made when we run a.out without providing
+   any parameter. We can notice some librarires that have appeared when we
+   run ldd in the lines with system call "open". It is quite clear that
+   the call "open" is there to open the file of the dynamic library.
+   Correspondingly, we have "close". The call "close" is there to close the
+   file of dynamic library that has just been read after the needed codes
+   have been linked. After system call "open", there is typically the system
+   call "read". It is there to read the codes that is needed for the program
+   from the dynamic library.
+
+5.
+ls /usr/bin | awk '(NR-805126509)%251 == 0'
+// We get the following output:
+   alsabat
+   db_archive
+   gdk-pixbuf-thumbnailer
+   iceauth
+   lastb
+   neqn
+   phar.phar
+   rnano
+   tcbtest
+   xmlto
+
+6.
+I run export LC_ALL='C' to change the locale to standard C.
+(1)
+ldd /usr/bin/alsabat
+Output:
+        linux-vdso.so.1 =>  (0x00007ffe27fda000)
+        libpthread.so.0 => /lib64/libpthread.so.0 (0x00007ff9fb96d000)
+        libm.so.6 => /lib64/libm.so.6 (0x00007ff9fb66b000)
+        libasound.so.2 => /lib64/libasound.so.2 (0x00007ff9fb36b000)
+        libdl.so.2 => /lib64/libdl.so.2 (0x00007ff9fb167000)
+        libgcc_s.so.1 => /lib64/libgcc_s.so.1 (0x00007ff9faf51000)
+        libc.so.6 => /lib64/libc.so.6 (0x00007ff9fab83000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007ff9fbb89000)
+        librt.so.1 => /lib64/librt.so.1 (0x00007ff9fa97b000)
+(2)
+ldd /usr/bin/db_archive
+Output:
+        linux-vdso.so.1 =>  (0x00007fff18bf5000)
+        libdb-5.3.so => /lib64/libdb-5.3.so (0x00007f2516e54000)
+        libpthread.so.0 => /lib64/libpthread.so.0 (0x00007f2516c38000)
+        libc.so.6 => /lib64/libc.so.6 (0x00007f251686a000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007f2517212000)
+(3)
+ldd /usr/bin/gdk-pixbuf-thumbnailer
+Output:
+        linux-vdso.so.1 =>  (0x00007ffcd936e000)
+        libgdk_pixbuf-2.0.so.0 => /lib64/libgdk_pixbuf-2.0.so.0 (0x00007f536ac7d000)
+        libgmodule-2.0.so.0 => /lib64/libgmodule-2.0.so.0 (0x00007f536aa79000)
+        libgio-2.0.so.0 => /lib64/libgio-2.0.so.0 (0x00007f536a6da000)
+        libgobject-2.0.so.0 => /lib64/libgobject-2.0.so.0 (0x00007f536a48a000)
+        libglib-2.0.so.0 => /lib64/libglib-2.0.so.0 (0x00007f536a174000)
+        libpng15.so.15 => /lib64/libpng15.so.15 (0x00007f5369f49000)
+        libm.so.6 => /lib64/libm.so.6 (0x00007f5369c47000)
+        libpthread.so.0 => /lib64/libpthread.so.0 (0x00007f5369a2b000)
+        libc.so.6 => /lib64/libc.so.6 (0x00007f536965d000)
+        libdl.so.2 => /lib64/libdl.so.2 (0x00007f5369459000)
+        libpcre.so.1 => /lib64/libpcre.so.1 (0x00007f53691f7000)
+        libffi.so.6 => /lib64/libffi.so.6 (0x00007f5368fef000)
+        libz.so.1 => /lib64/libz.so.1 (0x00007f5368dd9000)
+        libselinux.so.1 => /lib64/libselinux.so.1 (0x00007f5368bb2000)
+        libresolv.so.2 => /lib64/libresolv.so.2 (0x00007f5368999000)
+        libmount.so.1 => /lib64/libmount.so.1 (0x00007f5368756000)
+        libgcc_s.so.1 => /lib64/libgcc_s.so.1 (0x00007f5368540000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007f536aea5000)
+        libblkid.so.1 => /lib64/libblkid.so.1 (0x00007f5368300000)
+        libuuid.so.1 => /lib64/libuuid.so.1 (0x00007f53680fb000)
+(4)
+ldd /usr/bin/iceauth
+Output:
+        linux-vdso.so.1 =>  (0x00007fffb5fcf000)
+        libICE.so.6 => /lib64/libICE.so.6 (0x00007fc510323000)
+        libc.so.6 => /lib64/libc.so.6 (0x00007fc50ff55000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007fc51053f000)
+(5)
+ldd /usr/bin/lastb
+Output:
+        linux-vdso.so.1 =>  (0x00007ffda94ab000)
+        libcrypt.so.1 => /lib64/libcrypt.so.1 (0x00007f864932d000)
+        libc.so.6 => /lib64/libc.so.6 (0x00007f8648f5f000)
+        libfreebl3.so => /lib64/libfreebl3.so (0x00007f8648d5c000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007f864976d000)
+        libdl.so.2 => /lib64/libdl.so.2 (0x00007f8648b58000)
+(6)
+ldd /usr/bin/neqn
+Output:
+        not a dynamic executable
+// This is an error message. Using the "file" command, we see that
+   this file is POSIX shell script. A shell script does have any
+   dynamic linking to any dynamic library, so the error is then
+   returned.
+(7)
+ldd /usr/bin/phar.phar
+Output:
+        not a dynamic executable
+// This is an error message. Using the "file" command, we see that
+   this file is data. It is not an executable, so it would not link
+   to any dynamic libaray. Then, the error is returned.
+(8)
+ldd /usr/bin/rnano
+Output:
+        linux-vdso.so.1 =>  (0x00007ffeff70e000)
+        libncursesw.so.5 => /lib64/libncursesw.so.5 (0x00007fb53d6ac000)
+        libtinfo.so.5 => /lib64/libtinfo.so.5 (0x00007fb53d482000)
+        libc.so.6 => /lib64/libc.so.6 (0x00007fb53d0b4000)
+        libdl.so.2 => /lib64/libdl.so.2 (0x00007fb53ceb0000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007fb53d8e4000)
+(9)
+ldd /usr/bin/tcbtest
+Output:
+        linux-vdso.so.1 =>  (0x00007fff65973000)
+        libtokyocabinet.so.9 => /lib64/libtokyocabinet.so.9 (0x00007fada99f1000)
+        libbz2.so.1 => /lib64/libbz2.so.1 (0x00007fada97e1000)
+        libz.so.1 => /lib64/libz.so.1 (0x00007fada95cb000)
+        librt.so.1 => /lib64/librt.so.1 (0x00007fada93c3000)
+        libpthread.so.0 => /lib64/libpthread.so.0 (0x00007fada91a7000)
+        libm.so.6 => /lib64/libm.so.6 (0x00007fada8ea5000)
+        libc.so.6 => /lib64/libc.so.6 (0x00007fada8ad7000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007fada9c74000)
+(10)
+ldd /usr/bin/xmlto
+Output:
+        not a dynamic executable
+// This is an error message. Using the "file" command, we see that
+   this file is Bourne-Again shell script. A shell script does have
+   any dynamic linking to any dynamic library, so the error is then
+   returned.
+
+7.
+Before I run the script, I run export LC_ALL='C' to change the locale to
+standard C. Then, the following script is used to get a sorted list of
+every dynamic library:
+IFS=$'\n'
+for a in $( ls /usr/bin | awk '(NR-805126509)%251 == 0' )
+do
+    ldd /usr/bin/$a
+done |
+    sed '/not a dynamic executable/d' |
+    sed 's/=>.*$//' |
+    sed 's/^[ \t]*//' |
+    sed 's/\/.*\///' |
+    sed 's/ (0x.*)$//' |
+    sort -u
+The output of the script is:
+ld-linux-x86-64.so.2
+libICE.so.6 
+libasound.so.2 
+libblkid.so.1 
+libbz2.so.1 
+libc.so.6 
+libcrypt.so.1 
+libdb-5.3.so 
+libdl.so.2 
+libffi.so.6 
+libfreebl3.so 
+libgcc_s.so.1 
+libgdk_pixbuf-2.0.so.0 
+libgio-2.0.so.0 
+libglib-2.0.so.0 
+libgmodule-2.0.so.0 
+libgobject-2.0.so.0 
+libm.so.6 
+libmount.so.1 
+libncursesw.so.5 
+libpcre.so.1 
+libpng15.so.15 
+libpthread.so.0 
+libresolv.so.2 
+librt.so.1 
+libselinux.so.1 
+libtinfo.so.5 
+libtokyocabinet.so.9 
+libuuid.so.1 
+libz.so.1 
+linux-vdso.so.1 
