@@ -1,0 +1,183 @@
+1.
+wget http://web.cs.ucla.edu/classes/fall19/cs35L/assign/coreutils-with-bug.tar.gz
+// Download the package.
+
+tar -xzvf coreutils-with-bug.tar.gz
+// Unzip the package.
+
+cd coreutils-with-bug/
+// Change directory to that of the unzipped package.
+
+./configure --prefix /u/eng/class/classjqu/coreutils-with-bug
+// Configure it before installation and make sure it's installed under a proper
+directory.
+
+
+2.
+make
+// Compile the system. There is an error reported in the procedure. It says that
+the function 'futimens' has conflicting type. In utimens.h, it is declared as an
+int. However, it is declared as extern int in '/usr/include/sys/stat.h'.
+
+wget http://web.cs.ucla.edu/classes/fall19/cs35L/assign/coreutils.diff
+// Download the patch file.
+
+patch -p0 < coreutils.diff
+// Apply the patch.
+
+make
+// Compile again. This time, we don't have any problem because function 'futimens'
+in the system has been renamed as 'coreutils_futimens'. There is no conflict of
+type with another function with the same name now.
+
+make install
+// The system is installed to the designated directory.
+
+
+3.
+tmp=$(mktemp -d)
+// Create a temporary directory
+
+cd $tmp
+// Change directory to it.
+
+touch -d '1918-11-11 11:00 GMT' wwi-armistice-cs35L
+// Create a file with the designated date, which is very far in the past.
+
+touch now
+// Create another file with the current time.
+
+sleep 1
+// Delay for one second.
+
+touch now1
+// Create another file with the current time, which is a little bit later than
+the previous one.
+
+TZ=UTC0 ~/coreutils-with-bug/bin/ls -lt --full-time wwi-armistice-cs35L now now1
+// List the three files in a sorted order of modification time, newest first.
+Following output is shown:
+-rw-r--r-- 1 classjqu class 0 1918-11-11 11:00:00.000000000 +0000 wwi-armistice-cs35L
+-rw-r--r-- 1 classjqu class 0 2019-10-26 17:43:44.280951168 +0000 now1
+-rw-r--r-- 1 classjqu class 0 2019-10-26 17:43:37.424741888 +0000 now
+It can be seen the one with the ancient date comes first, while the recent two are
+in the correct order.
+
+cd
+// Leave the temporary directory.
+
+rm -fr $tmp
+// Remove the temporary directory.
+
+
+4.
+cd ~/coreutils-with-bug/bin
+// Change directory to the compiled ls.
+
+touch -d '1918-11-11 11:00 GMT' wwi-armistice-cs35L
+touch now
+sleep 1
+touch now1
+// Replicate the files that can show the bug.
+
+gdb ./ls
+// Run GDB for ls
+
+info functions
+// Show all functions.
+
+break compare_mtime
+// Set breakpoint at function compare_mtime because we know the program sorts
+by modification time from the definition of -t in man ls.
+
+run -lt --full-time wwi-armistice-cs35L now now1
+// Run the program with the files.
+
+s
+// Step to next line. It is shown that cmp_mtime is next called.
+
+s
+// Step to next line. It is shown that timespec_cmp in timespec.h is next called.
+This line also shows int diff = a.tv_sec - b.tv_sec;
+If the second term is a negative number with a very large absolute value, an overflow
+is likely in this case. Thus, a recent date minus an ancient date propbaly will result
+an overflow and lead to the wrong result. The documentation says only positive, zero
+or negative is cared in the comparison, so we can just do a comparison and then return
+1, 0 or -1.
+
+quit
+// Quit.
+
+y
+// Confirm quit.
+
+
+5.
+cd ~/Desktop/35l/lab4/coreutils-with-bug/lib
+// Go to the directory where timespec.h.
+
+cp timespec.h timespec.h~
+// Copy the original file to modify it.
+
+chmod u+w timespec.h~
+// Allow myself to write.
+
+emacs timespec.h~
+// Open the copied file.
+
+C-x C-q
+// Disable read-only mode in emacs.
+
+Delete the content of timespec_cmp, and put:
+  if (a.tv_sec > b.tv_sec)
+    return 1;
+  else if (a.tv_sec < b.tv_sec)
+    return -1;
+  return 0;
+
+cd ..
+// Change to the parent directory.
+
+diff -u lib/timespec.h lib/timespec.h~ > lab4.diff
+// Import the diff file to lab4.diff
+
+Add the ChangeLog at the top of the diff file.
+
+patch -p0 < lab4.diff
+// Patch the file.
+
+make
+// Recompile the system.
+
+$ tmp=$(mktemp -d)
+$ cd $tmp
+$ touch -d '1918-11-11 11:00 GMT' wwi-armistice-cs35L
+$ touch now
+$ sleep 1
+$ touch now1
+$ TZ=UTC0 ls -lt --full-time wwi-armistice-cs35L now now1
+// Reproduce the previous test
+We have the following output:
+-rw-r--r-- 1 classjqu class 0 2019-10-26 20:42:07.940113837 +0000 now1
+-rw-r--r-- 1 classjqu class 0 2019-10-26 20:41:59.580858111 +0000 now
+-rw-r--r-- 1 classjqu class 0 1918-11-11 11:00:00.000000000 +0000 wwi-armistice-cs35L
+Now, everything is in the correct order.
+
+$ cd
+$ rm -fr $tmp
+// Leave and delete the temporary directory.
+
+
+6.
+$ touch -d '1918-11-11 11:00 GMT' wwi-armistice-cs35L
+$ touch now
+$ sleep 1
+$ touch now1
+$ TZ=UTC0 ls -lt --full-time wwi-armistice-cs35L now now1
+// We try to reproduce the bug on SEASnet using already installed utilities. It turns
+out the outcome is even poorer:
+-rw-r--r-- 1 classjqu class 0 2054-12-17 17:28:16.000000000 +0000 wwi-armistice-cs35L
+-rw-r--r-- 1 classjqu class 0 2019-10-26 20:49:21.059458000 +0000 now1
+-rw-r--r-- 1 classjqu class 0 2019-10-26 20:49:13.313742000 +0000 now
+Not only the order is wrong, but the modification time of the ancient time is even
+displayed wrongly.
