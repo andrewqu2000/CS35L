@@ -1,0 +1,177 @@
+1.
+I plugged in the board via USB to my computer.
+
+2.
+Opened the BEAGLEBONE as an external storage device.
+Opened the START file.
+
+3.
+Nothing seems to work.
+I downloaded the driver from the website, but failed to install it.
+I looked up online for this problem and took the following step:
+Restart the computer while pressing shift
+Click on "Troubleshoot"
+Select "Startup Settings"
+Press "Restart"
+Press F7 
+
+4.
+Opened the BEAGLEBONE as an external storage device.
+Opened the START file.
+Download the driver again.
+Install the driver, and make sure to continue for every warning.
+
+5.
+Open http://192.168.7.2 as instructed in the START page.
+
+6.
+Go back to the setup guide on Piazza.
+Open PuTTY.
+Enter "192.168.7.2" as the hostname.
+Press "Open".
+Click "Yes" for the warning.
+Enter "root" as username.
+Password is not asked.
+
+7.
+The following lines are commands I entered in PuTTY to connect
+to UCLA_WEB:
+connmanctl
+enable wifi
+scan wifi
+services
+agent on
+connect wifi_2cf7f106a1e9_55434c415f574542_managed_none
+quit
+
+After I entered my password, a message is shown that the wifi is
+connected.
+
+8.
+Next, I try to find my IP address as I enter "ifconfig".
+I find "inet addr:172.28.146.48" under "wlan0".
+
+9.
+Update the the database of apt-get with command:
+sudo apt-get update
+Install xauth and xvfb for X11 forwarding support with commands:
+sudo apt-get install xauth
+sudo apt-get install xvfb
+
+10.
+I entered /etc/ssh/ssh_config with:
+nano /etc/ssh/ssh_config
+I change "ForwardAgent no" to "ForwardAgent yes" and "ForwardX11 no"
+to "ForwardX11 yes".
+I press C-x, y, and Enter.
+
+I entered /etc/ssh/sshd_config with:
+nano /etc/ssh/sshd_config
+It contains "X11Forwarding yes".
+I press C-x to exit.
+
+11.
+I installed Firefox with:
+sudo apt-get install firefox-esr-l10n-en-gb
+
+12.
+I logged out PuTTY and logged in again with "Enable X11 forwarding"
+checked.
+
+13.
+I check if OpenSSH is installed:
+dpkg --get-selections | grep openssh
+I see:
+openssh-client                                  install
+openssh-server                                  install
+openssh-sftp-server                             install
+Both openssh-client and openssh-server are installed.
+
+14.
+I am being the server now.
+Generate public and private keys:
+ssh-keygen
+I press enter when asked for a path.
+I enter "andrew" when asked to enter a passphrase and confirm.
+
+15.
+I create an account for the client, and I name it diwu:
+sudo useradd -d /home/diwu -m diwu
+sudo passwd diwu
+I enter "wudi" when asked to enter new UNIX password and confirm.
+
+16.
+Create .ssh directory for the new user:
+cd /home/diwu
+sudo mkdir .ssh
+
+17.
+Change ownership and permission on .ssh:
+sudo chown -R diwu .ssh
+sudo chmod 700 .ssh
+
+18.
+I connect the board onto my own hotspot:
+connmanctl
+scan wifi
+services
+agent on
+connect wifi_2cf7f106a1e9_42696c6c205775_managed_psk
+<my password>
+quit
+
+After I entered my password, a message is shown that the wifi is
+connected.
+
+19.
+I check my IP address again:
+ifconfig
+It is now: 192.168.43.227
+I give it to my partner this address along with his username and
+password.
+
+20.
+Now, I am being the client.
+I am given my username and my partner's IP address, so I copy my
+public key accordingly:
+ssh-copy-id -i user1@192.168.43.102
+I enter "yes" when prompted.
+I enter my password given.
+I tried to ssh-add, but I was told "Could not open a connection
+to your authentication agent."
+I looked up online and follow this procedure:
+eval `ssh-agent -s`
+ssh-add
+<my passphrase>
+
+21.
+I then log in to my account:
+ssh user1@192.168.43.102
+I was not prompted to enter password because of ssh-agent.
+I played around with command "ls" and then exit.
+
+22.
+I opened Xming on my computer.
+Now I log in with X11:
+ssh -X user1@192.168.43.102
+I enter:
+firefox
+There are a number of errors like this one:
+(firefox-esr:3064): GLib-GObject-CRITICAL **: g_object_ref: assertion 'object->ref_count > 0' failed
+But Firefox still opens normally, so I just leave them there.
+Some pages are shown, and I try to open google.com. It is just
+too slow to respond, so I give up. I press C-c to terminate it.
+
+I then enter:
+xeyes
+I then see a pair of eyes which will follow my cursor.
+
+23.
+Now I install xeyes for my partner to run on my board.
+sudo apt-get install xeyes
+I got an error "E: Package 'xeyes' has no installation candidate".
+I am prompted to install "x11-apps", so I do:
+sudo apt-get install x11-apps
+Now I enter:
+xeyes
+I see those eyes again. This app is ready for my partner to use.

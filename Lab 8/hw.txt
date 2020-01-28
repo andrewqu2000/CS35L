@@ -1,0 +1,33 @@
+1.
+The resulting network is still secure. The private key, which is the
+exclusive method to decrypt the messages sent in the network, is
+never published in the network. By solely observing all the bytes
+going across the network, the attackers have no means to decrypt the
+bytes. Thus, the network is still secure.
+
+(1)
+The resulting network is still secure. Although the attackers could see
+what the operations are by tapping the keyboards, they still have no
+way to acquire the private key, which is not relavent to keystrokes.
+They still can't access the information that is not created through
+keystrokes in this session, such as a file created previously. Thus,
+they will not be able to compromise the network.
+
+(2)
+The resulting network is not secure anymore. If attackers temporarily
+had physical control of the USB, that means they can directly access
+all information stored locally, including the key pairs. Then, the
+attackers could use the corresponding private key to decrypt the
+information sent to the destination.
+
+2.
+The gpg2 --verify command only verifies whether the file and the
+signature match. It does not check the creator of either file, as
+there is no information about that there. If a different person creates
+a file with a signature and send his/her public key along with them.
+The command will still say "Good signature" because they match.
+
+To ensure that the creator is the expected person, the creator could
+publish his/her public key so that everybody knows. The receiver then
+can use the key to decrypt and verify the signature. If it does not
+match, then the creator is definitely not the expected person. 	
